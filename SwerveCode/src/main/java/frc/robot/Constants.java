@@ -16,5 +16,10 @@ public final class Constants {
 	public static class Drivetrain {
 		public static final double L = 0; //placeholder for now - Length between each wheel axle
 		public static final double W = 0; //placeholder for now - Width between each wheel axle
+
+		public static final double[] fL = {0, 0};
+		public static final double[] fR = {0, 0};
+		public static final double[] bL = {0, 0};
+		public static final double[] bR = {0, 0};
 	}
 }
