@@ -3,12 +3,16 @@ package frc.robot;
 public abstract class RobotMap {
 
     // Drive Motors
-    public static final int OLD_MOTOR_DRIVE_LEFT_ONE = 1;
-    public static final int MOTOR_DRIVE_LEFT_ONE = 20;
-    public static final int MOTOR_DRIVE_LEFT_TWO = 23;
-    public static final int OLD_MOTOR_DRIVE_RIGHT_ONE = 5;
-    public static final int MOTOR_DRIVE_RIGHT_ONE = 21;
-    public static final int MOTOR_DRIVE_RIGHT_TWO = 22;
+    public class Drivetrain {
+        public static final int fRPow = 1;
+        public static final int bRPow = 20;
+        public static final int fLPow = 23;
+        public static final int bLPow = 5;
+        public static final int fRRot = 21;
+        public static final int bRRot = 22;
+        public static final int fLRot = 7;
+        public static final int bLRot = 24;
+    }
 
     // Other Motors
     public static final int MOTOR_INTAKE = 3;
