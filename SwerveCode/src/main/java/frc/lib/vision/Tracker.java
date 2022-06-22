@@ -1,12 +1,11 @@
-package frc.lib;
+package frc.lib.vision;
 
 import java.util.Vector;
-import org.opencv.core.Core;
+
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
 
 public class Tracker extends JTracker {
 	int nextTrackID = 0;
@@ -36,6 +35,17 @@ public class Tracker extends JTracker {
 	}
 
 	public void update(Vector<Rect> rectArray, Vector<Point> detections, Mat imag) {
+		if (tracks.size() == 0) {
+			for (int i = 0; i < detections.size(); i++) {
+				Track tr = new Track(detections.get(i), dt, accel_noise_mag, nextTrackID);
+				tracks.add(tr);
+			}
+		}
+
+		int numTracks = tracks.size();
+		int numDetections = detections.size();
+
+		double[][] Cost = new double[numTracks][numDetections];
 
 	}
 }

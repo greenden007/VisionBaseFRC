@@ -1,4 +1,4 @@
-package frc.lib;
+package frc.lib.vision;
 
 import org.opencv.core.Point;
 import java.util.Vector;

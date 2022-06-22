@@ -1,4 +1,4 @@
-package frc.lib;
+package frc.lib.vision;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;

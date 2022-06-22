@@ -1,4 +1,4 @@
-package frc.lib;
+package frc.lib.vision;
 
 import java.awt.Toolkit;
 import org.opencv.core.Scalar;

@@ -1,4 +1,4 @@
-package frc.lib;
+package frc.lib.vision;
 
 import java.util.Vector;
 import org.opencv.core.Mat;
