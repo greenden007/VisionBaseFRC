@@ -1,4 +1,4 @@
-package frc.robot.drivers.vision;
+package frc.lib;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
