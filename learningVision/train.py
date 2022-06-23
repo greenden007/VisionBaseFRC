@@ -74,3 +74,49 @@ def train(
         model.cuda().train()
 
         optimizer = torch.optim.SGD(filter(lambda x: x.requires_grad, model.parameters()), lr=opt.lr, momentum=.9, weight_decay=1e-4)
+
+    model = torch.nn.DataParallel(model)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(0.5 * opt.epochs), int(0.75 * opt.epochs)], gamma=0.1)
+
+
+    if not opt.unfreeze_bn:
+        for i, (name, p) in enumerate(model.named_parameters()):
+            p.requires_grad = False if 'batch_norm' in name else True
+
+    t0 = time.time()
+    for epoch in range(epochs):
+        epoch += start_epoch
+        logger.info(('%8s%12s' + '%10s' * 6) % ('Epoch', 'Batch', 'box', 'conf', 'id', 'total', 'nTargets', 'time'))
+
+        if freeze_backbone and (epoch < 2):
+            for i, (name, p) in enumerate(model.named_parameters()):
+                if int(name.split('.')[2]) < cutoff:
+                    p.requires_grad = False if (epoch == 0) else True
+
+        ui = -1
+        rloss = defaultdict(float)
+        optimizer.zero_grad()
+        for i, (imgs, targets, _, _, targets_len) in enumerate(dataloader):
+            if sum([len(x) for x in targets]) < 1:
+                continue
+
+            burnin = min(1000, len(dataloader))
+            if (epoch == 0) & (i <= burnin):
+                lr = opt.lr * (i / burnin) ** 4
+                for g in optimizer.param_groups:
+                    g['lr'] = lr
+
+            loss, components = model(imgs.cuda(), targets.cuda(), targets_len.cuda())
+            components = torch.mean(components.view(-1, 5), dim=0)
+            loss = torch.mean(loss)
+            loss.backward()
+
+            if ((i + 1) % accumulated_batches == 0) or (i == len(dataloader) - 1):
+                optimizer.step()
+                optimizer.zero_grad()
+
+            ui += 1
+
+            for ii, key in enumerate(model.module.loss_names):
+                rloss[key] = (rloss[key] * ui + components[ii] / (ui + 1))
+                
