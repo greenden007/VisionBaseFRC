@@ -118,5 +118,75 @@ def train(
             ui += 1
 
             for ii, key in enumerate(model.module.loss_names):
-                rloss[key] = (rloss[key] * ui + components[ii] / (ui + 1))
+                rloss[key] = (rloss[key] * ui + components[ii]) / (ui + 1)
                 
+            s = ('%8s12s' + '%10.3g' * 6) % (
+                '%g/%g' % (epoch, epochs - 1),
+                '%g/%g' % (i, len(dataloader) - 1),
+                rloss['box'], rloss['conf'],
+                rloss['id'], rloss['loss'],
+                rloss['nT'], time.time() - t0)
+            t0 = time.time()
+            if i % opt.print_interval == 0:
+                logger.info(s)
+        
+        checkpoint = {'epoch': epoch,
+                      'model': model.module.state_dict(),
+                      'optimizer': optimizer.state_dict()}
+
+        copyfile(cfg, weights_to + '/cfg/yolo3.cfg')
+        copyfile(data_cfg, weights_to + '/cfg/ccmcpe.json')
+
+        latest = osp.join(weights_to, 'latest.pt')
+        torch.save(checkpoint, latest)
+        if epoch % save_every == 0 and epoch != 0:
+            checkpoint["optimizer"] = []
+            torch.save(checkpoint, osp.join(weights_to, "weights_epoch_" + str(epoch) + ".pt"))
+
+        if epoch % opt.test_interval == 0:
+            with torch.no_grad():
+                mAP, R, P = test.test(cfg, data_cfg, weights=latest, batch_size=batch_size, img_size=img_size,
+                                      print_interval=40, nID=dataset.nID)
+                test.test_emb(cfg, data_cfg, weights=latest, batch_size=batch_size, img_size=img_size,
+                              print_interval=40, nID=dataset.nID)
+
+        scheduler.step()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--epochs', type=int, default=30, help='number of epochs')
+    parser.add_argument('--batch-size', type=int, default=32, help='size of each image batch')
+    parser.add_argument('--accumulated-batches', type=int, default=1, help='number of batches before optimizer step')
+    parser.add_argument('--cfg', type=str, default='cfg/yolov3.cfg', help='cfg file path')
+    parser.add_argument('--weights-from', type=str, default='weights/',
+                        help='Path for getting the trained model for resuming training (Should only be used with '
+                             '--resume)')
+    parser.add_argument('--weights-to', type=str, default='weights/',
+                        help='Store the trained weights after resuming training session. It will create a new folder '
+                             'with timestamp in the given path')
+    parser.add_argument('--save-model-after', type=int, default=10,
+                        help='Save a checkpoint of model at given interval of epochs')
+    parser.add_argument('--data-cfg', type=str, default='cfg/ccmcpe.json', help='coco.data file path')
+    parser.add_argument('--img-size', type=int, default=[1088, 608], nargs='+', help='pixels')
+    parser.add_argument('--resume', action='store_true', help='resume training flag')
+    parser.add_argument('--print-interval', type=int, default=40, help='print interval')
+    parser.add_argument('--test-interval', type=int, default=9, help='test interval')
+    parser.add_argument('--lr', type=float, default=1e-2, help='init lr')
+    parser.add_argument('--unfreeze-bn', action='store_true', help='unfreeze bn')
+    opt = parser.parse_args()
+
+    init_seeds()
+
+    train(opt.cfg,
+        opt.data_cfg,
+        weights_from=opt.weights_from,
+        weights_to=opt.weights_to,
+        save_every=opt.save_model_after,
+        img_size=opt.img_size,
+        resume=opt.resume,
+        epochs=opt.epochs,
+        batch_size=opt.batch_size,
+        accumulated_batches=opt.accumulated_batches,
+        opt=opt,
+        )
+        
